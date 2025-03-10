@@ -4,7 +4,9 @@
 #include "MAX30105.h"
 #include "spo2_algorithm.h"
 #include <U8g2lib.h>
+#include <BluetoothSerial.h>
 
+BluetoothSerial BTSerial;
 MAX30105 particleSensor;
 MPU6050 mpu;
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
@@ -34,7 +36,8 @@ void setup() {
     u8g2.begin();  // Initialize the display
     u8g2.enableUTF8Print(); // Enable UTF-8 support
     mpu.initialize();
-
+    BTSerial.begin("MediPulse..");
+    Serial.println("bluetooth started");
     if (!mpu.testConnection()) {
         Serial.println("MPU6050 not connected!");
         while (1);
@@ -188,12 +191,13 @@ void loop() {
     //After gathering 25 new samples recalculate HR and SP02
     maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
   }
-  int heartRate = 78;
-    int spo2 = 96;
-    float temperature = 36.8;
-    int battery = 75;
-    String medReminder = "Med: 2PM";
-    
+   String dataToSend = String(heartRate) + "," + String(spo2) + "," + 
+                        String(maxAccel); //+ "," + String(accelY) + "," + 
+                        //String(accelZ) + "," + receivedTime + "," + alarmTime;
+    BTSerial.println(dataToSend);
+    Serial.println("data send..");
+
+  
 
     // Start Drawing
     u8g2.clearBuffer();
@@ -245,7 +249,7 @@ u8g2.drawStr(102, 37, "%");
 
     // Battery Indicator
     u8g2.drawFrame(110, 0, 15, 8);
-    u8g2.drawBox(110, 0, battery / 7, 8);
+    u8g2.drawBox(110, 0, 7, 8);
 
     // Send Buffer to Display
     u8g2.sendBuffer();
